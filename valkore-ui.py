@@ -1,4 +1,9 @@
+import json
 import logging
+import os
+import webbrowser
+from urllib.request import urlopen
+
 import tools
 
 import tkinter as tk
@@ -18,12 +23,19 @@ class CONFIGui(tk.Frame):
 		self.cfg = config
 		self.modules = tools.loadModules()
 
+		lookup = urlopen("https://valky.dev/api/valkore/")
+		self.whitelist = json.loads(lookup.read())
+
 		self.tabControl = ttk.Notebook(self.master)
 		self.tab1 = ttk.Frame(self.tabControl)  # Logs
 		self.tab2 = ttk.Frame(self.tabControl)  # My Modules
 		self.tab3 = ttk.Frame(self.tabControl)  # Get Modules
 		self.tab4 = ttk.Frame(self.tabControl)  # Settings
 		self.tab99 = ttk.Frame(self.tabControl)  # About
+
+		self.icon_world = tk.PhotoImage(file='modules/valkore-ui/data/world.png')
+		self.icon_start = tk.PhotoImage(file='modules/valkore-ui/data/start.png')
+		self.icon_download = tk.PhotoImage(file='modules/valkore-ui/data/download.png')
 
 		# Labelframe - Logs
 		self.lfLogs = tk.LabelFrame(self.tab1, text="Console Logs")
@@ -106,29 +118,79 @@ class CONFIGui(tk.Frame):
 				vers = tk.Label(self.lfModules, text=f"v{cfg['VKore']['version']}", width=10, anchor="w")
 				vers.grid(row=i, column=2)
 
-				desc = tk.Label(self.lfModules, text=f"{cfg['VKore']['description']}", width=50, anchor="w")
+				desc = tk.Label(self.lfModules, text=f"{cfg['VKore']['description']}", width=60, anchor="w")
 				desc.grid(row=i, column=3)
 
-				button = ttk.Button(self.lfModules, text=cfg['VKore']['name'], command=lambda i=module: self.sendLog(i), width=20)
+				button = ttk.Button(self.lfModules, image=self.icon_world, command=lambda s=module: self.showModule(s))
 				button.grid(row=i, column=4)
+
+				if 'interface' in cfg['VKore'] and (cfg['VKore']['interface'] == "True" or cfg['VKore']['interface'] == "true"):
+					button = ttk.Button(self.lfModules, image=self.icon_start, command=lambda s=module: self.startModule(s))
+					button.grid(row=i, column=5)
 
 				i = i + 1
 
 	def tabGetModules(self):
-		pass
+		if len(self.whitelist) > 0:
+			i = 1
+			for module, link in self.whitelist.items():
+
+				if module in self.modules:
+					cfg = self.modules[module]
+				else:
+					ini = f"{link[:-4].replace('github.com', 'raw.githubusercontent.com')}/main/config.ini"
+					cfg = Config(ini).readConfig()
+
+				if cfg is False:
+					continue
+
+				vers = tk.Label(self.lfGetModules, text=f"{cfg['VKore']['name']}", width=20, anchor="w")
+				vers.grid(row=i, column=1)
+
+				vers = tk.Label(self.lfGetModules, text=f"v{cfg['VKore']['version']}", width=10, anchor="w")
+				vers.grid(row=i, column=2)
+
+				desc = tk.Label(self.lfGetModules, text=f"{cfg['VKore']['description']}", width=60, anchor="w")
+				desc.grid(row=i, column=3)
+
+				button = ttk.Button(self.lfGetModules, image=self.icon_world, command=lambda s=module: self.showModule(s))
+				button.grid(row=i, column=4)
+
+				if not os.path.isdir(f"./modules/{module}"):
+					button = ttk.Button(self.lfGetModules, image=self.icon_download, command=lambda s=module: self.getModule(s))
+					button.grid(row=i, column=5)
+
+				i = i + 1
+
 
 	def tabSettings(self):
 		pass
 
-	def sendLog(self, i):
+	def sendLog(self, log: str|tuple):
 		if self.logy is None:
 			log_handler = UiLogger(self.log_widget)
 			self.logy = logging.getLogger("valkore-ui")
 			self.logy.addHandler(log_handler)
-		self.logy.info(f"Test log: {i}")
+		self.logy.info(log)
 
 	def getLogWidget(self):
 		return self.log_widget
+
+	def showModule(self, m):
+		self.sendLog(f"'{m}' Show Web")
+		webbrowser.open(self.whitelist[m][:-4])
+
+	def startModule(self, m):
+		self.sendLog(f"'{m}' Start")
+		tools.runModule(modlue=m, widget=self.log_widget)
+
+	def refreshModules(self):
+		self.modules = None
+		self.modules = tools.loadModules()
+		self.tabModules()
+
+	def getModule(self, m):
+		pass
 
 
 def load():

@@ -133,31 +133,22 @@ class CONFIGui(tk.Frame):
 	def tabGetModules(self):
 		if len(self.whitelist) > 0:
 			i = 1
-			for module, link in self.whitelist.items():
+			for module, info in self.whitelist.items():
 
-				if module in self.modules:
-					cfg = self.modules[module]
-				else:
-					ini = f"{link[:-4].replace('github.com', 'raw.githubusercontent.com')}/main/config.ini"
-					cfg = Config(ini).readConfig()
-
-				if cfg is False:
-					continue
-
-				vers = tk.Label(self.lfGetModules, text=f"{cfg['VKore']['name']}", width=20, anchor="w")
+				vers = tk.Label(self.lfGetModules, text=f"{info['name']}", width=20, anchor="w")
 				vers.grid(row=i, column=1)
 
-				vers = tk.Label(self.lfGetModules, text=f"v{cfg['VKore']['version']}", width=10, anchor="w")
+				vers = tk.Label(self.lfGetModules, text=f"v{info['version']}", width=10, anchor="w")
 				vers.grid(row=i, column=2)
 
-				desc = tk.Label(self.lfGetModules, text=f"{cfg['VKore']['description']}", width=60, anchor="w")
+				desc = tk.Label(self.lfGetModules, text=f"{info['description']}", width=60, anchor="w")
 				desc.grid(row=i, column=3)
 
 				button = ttk.Button(self.lfGetModules, image=self.icon_world, command=lambda s=module: self.showModule(s))
 				button.grid(row=i, column=4)
 
 				if not os.path.isdir(f"./modules/{module}"):
-					button = ttk.Button(self.lfGetModules, image=self.icon_download, command=lambda c=cfg, s=module: self.getModule(c, s))
+					button = ttk.Button(self.lfGetModules, image=self.icon_download, command=lambda s=module: self.getModule(s))
 					button.grid(row=i, column=5)
 
 				i = i + 1
@@ -178,7 +169,7 @@ class CONFIGui(tk.Frame):
 
 	def showModule(self, m):
 		self.sendLog(f"'{m}' Show Web")
-		webbrowser.open(self.whitelist[m][:-4])
+		webbrowser.open(self.whitelist[m]['link'][:-4])
 
 	def startModule(self, m):
 		self.sendLog(f"'{m}' Start")
@@ -189,10 +180,16 @@ class CONFIGui(tk.Frame):
 		self.modules = tools.loadModules()
 		self.tabModules()
 
-	def getModule(self, config, module):
+	def getModule(self, module):
 		self.sendLog(f"'{module}' Download")
-		tools.getModule(config=config, module=module, logger=self.logy, whitelist=self.whitelist)
+		tools.getModule(module=module, logger=self.logy, whitelist=self.whitelist)
 		self.refreshModules()
+
+		self.logy.info(f"{module}: Checking for dependencies")
+		if tools.getDependency(self.modules[module], module, self.logy):
+			self.logy.info(f"{module}: Dependencies up to date")
+		else:
+			self.logy.info(f"{module}: Error in dependencies!")
 
 
 def load():

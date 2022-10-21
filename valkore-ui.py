@@ -157,7 +157,7 @@ class CONFIGui(tk.Frame):
 				button.grid(row=i, column=4)
 
 				if not os.path.isdir(f"./modules/{module}"):
-					button = ttk.Button(self.lfGetModules, image=self.icon_download, command=lambda s=module: self.getModule(s))
+					button = ttk.Button(self.lfGetModules, image=self.icon_download, command=lambda c=cfg, s=module: self.getModule(c, s))
 					button.grid(row=i, column=5)
 
 				i = i + 1
@@ -189,8 +189,10 @@ class CONFIGui(tk.Frame):
 		self.modules = tools.loadModules()
 		self.tabModules()
 
-	def getModule(self, m):
-		pass
+	def getModule(self, config, module):
+		self.sendLog(f"'{module}' Download")
+		tools.getModule(config=config, module=module, logger=self.logy, whitelist=self.whitelist)
+		self.refreshModules()
 
 
 def load():

@@ -182,7 +182,7 @@ class CONFIGui(tk.Frame):
 
 	def startModule(self, m):
 		self.sendLog(f"'{m}' Start")
-		tools.runModule(modlue=m, widget=self.log_widget)
+		tools.runModule(modlue=m, logger=self.logy)
 
 	def refreshModules(self):
 		self.modules = None

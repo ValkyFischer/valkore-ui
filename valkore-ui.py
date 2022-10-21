@@ -124,7 +124,7 @@ class CONFIGui(tk.Frame):
 				button = ttk.Button(self.lfModules, image=self.icon_world, command=lambda s=module: self.showModule(s))
 				button.grid(row=i, column=4)
 
-				if 'interface' in cfg['VKore'] and (cfg['VKore']['interface'] == "True" or cfg['VKore']['interface'] == "true"):
+				if 'interface' in cfg['VKore'] and cfg['VKore']['interface'] is True:
 					button = ttk.Button(self.lfModules, image=self.icon_start, command=lambda s=module: self.startModule(s))
 					button.grid(row=i, column=5)
 
